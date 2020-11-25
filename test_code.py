@@ -5,7 +5,7 @@ import PIL.Image
 
 images=[]
 
-images.append(numpy.asarray(PIL.Image.open("testimage.tif"))/129)
+images.append((numpy.asarray(PIL.Image.open("testimage.tif"))//129))
 
 dlp=pycrafter6500.dmd()
 
