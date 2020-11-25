@@ -1,4 +1,5 @@
 Pycrafter 6500 is a native Python controller for Texas Instruments' dlplcr6500evm evaluation module for DLP displays.
+The script is compatible with Python 2.x, and should work up to version 3.8 thanks to the kind controbution of Guangyuan Zhao (https://github.com/zhaoguangyuan123). 
 The script requires Pyusb and Numpy to be present in your Python environment. The test script included requires the Python Image Library (PIL or pillow) for opening a test image. The device must have libusb drivers installed, for Windows users we suggest to install them= through Zadig (http://zadig.akeo.ie/), and selecting the libusb_win32 driver.
 
 If you use this library for scientific publications, please consider mentioning the library and citing our work (https://doi.org/10.1364/OE.25.000949).
