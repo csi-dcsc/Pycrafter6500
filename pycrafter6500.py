@@ -5,8 +5,6 @@ import numpy
 import sys
 
 
-
-
 ##function that converts a number into a bit string of given length
 
 def convlen(a,l):
@@ -23,7 +21,7 @@ def bitstobytes(a):
     if len(a)%8!=0:
         padding=8-len(a)%8
         a='0'*padding+a
-    for i in range(len(a)/8):
+    for i in range(len(a)//8):
         bytelist.append(int(a[8*i:8*(i+1)],2))
 
     bytelist.reverse()
@@ -201,8 +199,6 @@ def encode(image):
 
     size=bytecount
 
-    print size
-
     total=convlen(size,32)
     total=bitstobytes(total)
     for i in range(len(total)):
@@ -290,13 +286,13 @@ class dmd():
     def checkforerrors(self):
         self.command('r',0x22,0x01,0x00,[])
         if self.ans[6]!=0:
-            print self.ans[6]    
+            print (self.ans[6])    
 
 ## function printing all of the dlp answer
 
     def readreply(self):
         for i in self.ans:
-            print hex(i)
+            print (hex(i))
 
 ## functions for idle mode activation
 
@@ -433,15 +429,13 @@ class dmd():
 
     def bmpload(self,image,size):
 
-        t=time.clock()
-
-        packnum=size/504+1
+        packnum=size//504+1
 
         counter=0
 
         for i in range(packnum):
             if i %100==0:
-                print i,packnum
+                print (i,packnum)
             payload=[]
             if i<packnum-1:
                 leng=convlen(504,16)
@@ -459,7 +453,6 @@ class dmd():
 
 
             self.checkforerrors()
-        print time.clock()-t
 
 
     def defsequence(self,images,exp,ti,dt,to,rep):
@@ -478,19 +471,19 @@ class dmd():
         encodedimages=[]
         sizes=[]
 
-        for i in range((num-1)/24+1):
-            print 'merging...'
-            if i<((num-1)/24):
+        for i in range((num-1)//24+1):
+            print ('merging...')
+            if i<((num-1)//24):
                 imagedata=mergeimages(arr[i*24:(i+1)*24])
             else:
                 imagedata=mergeimages(arr[i*24:])
-            print 'encoding...'
+            print ('encoding...')
             imagedata,size=encode(imagedata)
 
             encodedimages.append(imagedata)
             sizes.append(size)
 
-            if i<((num-1)/24):
+            if i<((num-1)//24):
                 for j in range(i*24,(i+1)*24):
                     self.definepattern(j,exp[j],1,'111',ti[j],dt[j],to[j],i,j-i*24)
             else:
@@ -499,15 +492,12 @@ class dmd():
 
         self.configurelut(num,rep)
 
-        for i in range((num-1)/24+1):
+        for i in range((num-1)//24+1):
         
+            self.setbmp((num-1)//24-i,sizes[(num-1)//24-i])
 
-            self.setbmp((num-1)/24-i,sizes[(num-1)/24-i])
-
-
-
-            print 'uploading...'
-            self.bmpload(encodedimages[(num-1)/24-i],sizes[(num-1)/24-i])
+            print ('uploading...')
+            self.bmpload(encodedimages[(num-1)//24-i],sizes[(num-1)//24-i])
 
 
 
