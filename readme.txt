@@ -4,6 +4,8 @@ The script requires Pyusb and Numpy to be present in your Python environment. Th
 
 If you use this library for scientific publications, please consider mentioning the library and citing our work (https://doi.org/10.1364/OE.25.000949).
 
+Special thanks to Ashu (@e841018) for contributing a fast encoder to the library, providing a great speedup to the process of loading images to the device.
+
 Features list:
 
 - basic control of the evaluation module (modes selection, idle toggle, start/pause/stop sequences)
