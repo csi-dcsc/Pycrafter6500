@@ -3,6 +3,7 @@ import usb.util
 import time
 import numpy
 import sys
+from erle import encode
 
 
 ##function that converts a number into a bit string of given length
@@ -27,186 +28,6 @@ def bitstobytes(a):
     bytelist.reverse()
 
     return bytelist
-
-##function that encodes a 8 bit numpy array matrix as a enhanced run lenght encoded string of bits
-
-def mergeimages(images):
-    mergedimage=numpy.zeros((1080,1920,3),dtype='uint8')
-
-    for i in range(len(images)):
-        if i<8:
-            mergedimage[:,:,2]=mergedimage[:,:,2]+images[i]*(2**i)
-        if i>7 and i<16:
-            mergedimage[:,:,1]=mergedimage[:,:,1]+images[i]*(2**(i-8))
-        if i>15 and i<24:
-            mergedimage[:,:,0]=mergedimage[:,:,0]+images[i]*(2**(i-16))
-
-    return mergedimage
-
-def encode(image): 
-
-
-## header creation
-    bytecount=48    
-    bitstring=[]
-
-    bitstring.append(0x53)
-    bitstring.append(0x70)
-    bitstring.append(0x6c)
-    bitstring.append(0x64)
-    
-    width=convlen(1920,16)
-    width=bitstobytes(width)
-    for i in range(len(width)):
-        bitstring.append(width[i])
-
-    height=convlen(1080,16)
-    height=bitstobytes(height)
-    for i in range(len(height)):
-        bitstring.append(height[i])
-
-
-    total=convlen(0,32)
-    total=bitstobytes(total)
-    for i in range(len(total)):
-        bitstring.append(total[i])        
-
-    for i in range(8):
-        bitstring.append(0xff)
-
-    for i in range(4):    ## black curtain
-        bitstring.append(0x00)
-
-    bitstring.append(0x00)
-
-    bitstring.append(0x02) ## enhanced rle
-
-    bitstring.append(0x01)
-
-    for i in range(21):
-        bitstring.append(0x00)
-
-
-
-    n=0
-    i=0
-    j=0
-
-    while i <1080:
-        while j <1920:
-            if i>0 and numpy.all(image[i,j,:]==image[i-1,j,:]):
-                while j<1920 and numpy.all(image[i,j,:]==image[i-1,j,:]):
-                    n=n+1
-                    j=j+1
-
-                bitstring.append(0x00)
-                bitstring.append(0x01)
-                bytecount+=2
-                
-                if n>=128:
-                    byte1=(n & 0x7f)|0x80
-                    byte2=(n >> 7)
-                    bitstring.append(byte1)
-                    bitstring.append(byte2)
-                    bytecount+=2
-                    
-                else:
-                    bitstring.append(n)
-                    bytecount+=1
-                n=0
-
-            
-            else:
-                if j<1919 and numpy.all(image[i,j,:]==image[i,j+1,:]):
-                    n=n+1
-                    while j<1919 and numpy.all(image[i,j,:]==image[i,j+1,:]):
-                        n=n+1
-                        j=j+1
-                    if n>=128:
-                        byte1=(n & 0x7f)|0x80
-                        byte2=(n >> 7)
-                        bitstring.append(byte1)
-                        bitstring.append(byte2)
-                        bytecount+=2
-                        
-                    else:
-                        bitstring.append(n)
-                        bytecount+=1
-
-                    bitstring.append(image[i,j-1,0])
-                    bitstring.append(image[i,j-1,1])
-                    bitstring.append(image[i,j-1,2])
-                    bytecount+=3
-                    
-                    j=j+1
-                    n=0
-
-                else:
-                    if j>1917 or numpy.all(image[i,j+1,:]==image[i,j+2,:]) or numpy.all(image[i,j+1,:]==image[i-1,j+1,:]):
-                        bitstring.append(0x01)
-                        bytecount+=1
-                        bitstring.append(image[i,j,0])
-                        bitstring.append(image[i,j,1])
-                        bitstring.append(image[i,j,2])
-                        bytecount+=3
-                        
-                        j=j+1
-                        n=0
-
-                    else:
-                        bitstring.append(0x00)
-                        bytecount+=1
-
-                        toappend=[]
-
-                        
-                        while numpy.any(image[i,j,:]!=image[i,j+1,:]) and numpy.any(image[i,j,:]!=image[i-1,j,:]) and j<1919:
-                            n=n+1
-                            toappend.append(image[i,j,0])
-                            toappend.append(image[i,j,1])
-                            toappend.append(image[i,j,2])
-                            j=j+1
-
-                        if n>=128:
-                            byte1=(n & 0x7f)|0x80
-                            byte2=(n >> 7)
-                            bitstring.append(byte1)
-                            bitstring.append(byte2)
-                            bytecount+=2
-                                
-                        else:
-                            bitstring.append(n)
-                            bytecount+=1
-
-                        for k in toappend:
-                            bitstring.append(k)
-                            bytecount+=1
-                        n=0
-        j=0
-        i=i+1
-        bitstring.append(0x00)
-        bitstring.append(0x00)
-        bytecount+=2
-    bitstring.append(0x00)
-    bitstring.append(0x01)
-    bitstring.append(0x00)
-    bytecount+=3
-
-
-    while (bytecount)%4!=0:
-        bitstring.append(0x00)
-        bytecount+=1        
-
-    size=bytecount
-
-    total=convlen(size,32)
-    total=bitstobytes(total)
-    for i in range(len(total)):
-        bitstring[i+8]=total[i]    
-
-    return bitstring, bytecount
-
-
 
 ##a dmd controller class
 
@@ -474,9 +295,9 @@ class dmd():
         for i in range((num-1)//24+1):
             print ('merging...')
             if i<((num-1)//24):
-                imagedata=mergeimages(arr[i*24:(i+1)*24])
+                imagedata=arr[i*24:(i+1)*24]
             else:
-                imagedata=mergeimages(arr[i*24:])
+                imagedata=arr[i*24:]
             print ('encoding...')
             imagedata,size=encode(imagedata)
 
